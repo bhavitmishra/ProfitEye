@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1/:match*",
+      "destination": "https://hono-backend.23btc116.workers.dev/api/v1/:match*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
