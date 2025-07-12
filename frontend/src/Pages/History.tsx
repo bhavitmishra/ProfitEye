@@ -96,10 +96,10 @@ export default function HistoryPage() {
                     className="bg-slate-800 p-4 rounded-md border border-slate-700 shadow-md"
                   >
                     <div className="mb-2">
-                      <h3 className="text-lg font-bold">🧾 Sale ID: {h.id}</h3>
-                      <p className="text-sm text-slate-400">
+                      <h3 className="text-lg font-bold">
                         📝 Note: {h.buyerNote || "N/A"}
-                      </p>
+                      </h3>
+
                       <p className="text-sm text-slate-400">
                         💵 Total: ₹{h.total} | ⏰ Time:{" "}
                         {new Date(h.createdAt).toLocaleTimeString()}
