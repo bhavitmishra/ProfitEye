@@ -21,8 +21,9 @@ export default function Dashboard() {
   const [note, setNote] = useState("");
   const [ref, setref] = useState(false);
   const [qtyByProductId, setQtyByProductId] = useState<{
-    [productId: number]: number;
+    [productId: number]: string;
   }>({});
+
   const [isCartOpen, setIsCartOpen] = useState(true);
 
   useEffect(() => {
@@ -62,7 +63,12 @@ export default function Dashboard() {
     return () => clearTimeout(tout);
   }, [val, navigate]);
 
-  const handleAddToSellList = (product: Product, qty: number) => {
+  const handleAddToSellList = (product: Product, qtyStr: string) => {
+    const qty = parseInt(qtyStr, 10);
+    if (isNaN(qty) || qty < 1) {
+      alert("Enter a valid quantity (≥ 1)");
+      return;
+    }
     const newProducts = Array(qty).fill(product);
     setSelectedProducts((prev) => [...prev, ...newProducts]);
     setTotalRevenue((prev) => prev + product.sellingprice * qty);
@@ -217,21 +223,21 @@ export default function Dashboard() {
                         min="1"
                         value={qtyByProductId[p.id] ?? 1}
                         onChange={(e) => {
-                          const value = Math.max(
-                            1,
-                            parseInt(e.target.value) || 1
-                          );
-                          setQtyByProductId((prev) => ({
-                            ...prev,
-                            [p.id]: value,
-                          }));
+                          const value = e.target.value;
+                          // Allow empty string, only digits
+                          if (value === "" || /^[0-9\b]+$/.test(value)) {
+                            setQtyByProductId((prev) => ({
+                              ...prev,
+                              [p.id]: value,
+                            }));
+                          }
                         }}
                         className="w-16 bg-slate-700 text-white text-center rounded-md px-2 py-1 outline-none border border-slate-600 focus:border-green-500 transition-all"
                       />
                       <button
                         className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-700 text-white rounded-md text-sm font-medium shadow hover:from-green-600 hover:to-green-800 transition-all"
                         onClick={() =>
-                          handleAddToSellList(p, qtyByProductId[p.id] ?? 1)
+                          handleAddToSellList(p, qtyByProductId[p.id] ?? "")
                         }
                       >
                         Sell
