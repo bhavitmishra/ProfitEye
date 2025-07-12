@@ -21,9 +21,8 @@ export default function Dashboard() {
   const [note, setNote] = useState("");
   const [ref, setref] = useState(false);
   const [qtyByProductId, setQtyByProductId] = useState<{
-    [productId: number]: string;
+    [productId: number]: number;
   }>({});
-
   const [isCartOpen, setIsCartOpen] = useState(true);
 
   useEffect(() => {
@@ -63,9 +62,8 @@ export default function Dashboard() {
     return () => clearTimeout(tout);
   }, [val, navigate]);
 
-  const handleAddToSellList = (product: Product, qtyStr: string) => {
-    const qty = parseInt(qtyStr, 10);
-    if (isNaN(qty) || qty < 1) {
+  const handleAddToSellList = (product: Product, qty: number) => {
+    if (!Number.isInteger(qty) || qty < 1) {
       alert("Enter a valid quantity (≥ 1)");
       return;
     }
@@ -132,7 +130,7 @@ export default function Dashboard() {
         </div>
 
         <div className="text-lg text-green-400 font-semibold">
-          Total Revenue: ₹{totalRevenue}
+          Total Revenue: ₹{totalRevenue.toFixed(2)}
         </div>
 
         <div className="flex flex-col gap-2 max-w-md">
@@ -175,7 +173,7 @@ export default function Dashboard() {
                     <div>
                       <p className="font-semibold text-sm">{item.name}</p>
                       <p className="text-xs text-slate-400">
-                        ₹{item.sellingprice}
+                        ₹{item.sellingprice.toFixed(2)}
                       </p>
                     </div>
                     <button
@@ -211,10 +209,11 @@ export default function Dashboard() {
                     >
                       <h3 className="font-semibold text-lg">{p.name}</h3>
                       <p className="text-sm text-slate-400">
-                        ₹{p.buyingprice} → ₹{p.sellingprice}
+                        ₹{p.buyingprice.toFixed(2)} → ₹
+                        {p.sellingprice.toFixed(2)}
                       </p>
                       <span className="text-xs text-slate-300">
-                        Profit: {p.profit}
+                        Profit: {p.profit.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
@@ -223,12 +222,16 @@ export default function Dashboard() {
                         min="1"
                         value={qtyByProductId[p.id] ?? 1}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          // Allow empty string, only digits
-                          if (value === "" || /^[0-9\b]+$/.test(value)) {
+                          const value = parseInt(e.target.value, 10);
+                          if (!isNaN(value) && value >= 1) {
                             setQtyByProductId((prev) => ({
                               ...prev,
                               [p.id]: value,
+                            }));
+                          } else {
+                            setQtyByProductId((prev) => ({
+                              ...prev,
+                              [p.id]: 1,
                             }));
                           }
                         }}
@@ -237,7 +240,7 @@ export default function Dashboard() {
                       <button
                         className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-700 text-white rounded-md text-sm font-medium shadow hover:from-green-600 hover:to-green-800 transition-all"
                         onClick={() =>
-                          handleAddToSellList(p, qtyByProductId[p.id] ?? "")
+                          handleAddToSellList(p, qtyByProductId[p.id] ?? 1)
                         }
                       >
                         Sell
