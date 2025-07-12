@@ -20,9 +20,9 @@ model User {
 model Product {
   id           Int    @id @default(autoincrement())
   name         String
-  buyingprice  Int
-  sellingprice Int
-  profit Int @default(0)
+  buyingprice  Float
+  sellingprice Float
+  profit Float @default(0)
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
@@ -35,7 +35,7 @@ model History {
   userId    Int
   user      User             @relation(fields: [userId], references: [id])
   buyerNote String?
-  total     Int // Total revenue for this sale
+  total     Float // Total revenue for this sale
   createdAt DateTime         @default(now())
   products  HistoryProduct[]
 }
@@ -46,6 +46,6 @@ model HistoryProduct {
   history      History @relation(fields: [historyId], references: [id])
   productId    Int
   productName  String // snapshot of name
-  sellingPrice Int
-  profit Int?
+  sellingPrice Float
+  profit Float?
 }
