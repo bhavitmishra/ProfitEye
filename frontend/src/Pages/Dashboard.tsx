@@ -213,7 +213,7 @@ export default function Dashboard() {
                         {p.sellingprice.toFixed(2)}
                       </p>
                       <span className="text-xs text-slate-300">
-                        Profit: {p.profit.toFixed(2)}
+                        Profit: {p.profit}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 ml-4">

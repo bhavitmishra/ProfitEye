@@ -61,8 +61,11 @@ export default function Product() {
         {
           id: Number(id),
           name: formData.name,
-          buyingprice: parseInt(formData.buyingprice),
-          sellingprice: parseInt(formData.sellingprice),
+          buyingprice: parseFloat(formData.buyingprice),
+          sellingprice: parseFloat(formData.sellingprice),
+          profit:
+            parseFloat(formData.sellingprice) -
+            parseFloat(formData.buyingprice),
         },
         {
           headers: {

@@ -174,9 +174,18 @@ productRouter.put("/:id", async (c) => {
     return c.json({ msg: "Product not found or unauthorized" }, 403);
   }
 
+  const { name, buyingprice, sellingprice } = parsed.data;
+  //@ts-ignore
+  const profit = sellingprice - buyingprice;
+
   const update = await prisma.product.update({
     where: { id },
-    data: parsed.data,
+    data: {
+      name,
+      buyingprice,
+      sellingprice,
+      profit,
+    },
   });
 
   return c.json({
