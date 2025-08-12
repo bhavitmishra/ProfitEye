@@ -85,6 +85,7 @@ productRouter.get("/search/", async (c) => {
 
   const product = await prisma.product.findMany({
     where: {
+      userId: c.get("userId"),
       name: {
         contains: name, // substring match
         mode: "insensitive", // ignore case

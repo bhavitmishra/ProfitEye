@@ -8,13 +8,12 @@ import z from "zod";
 // Types
 type Jwt_Payload = { id: number };
 
-// Hono Router Setup
 const historyRouter = new Hono<{
   Bindings: { DATABASE_URL: string };
   Variables: { userId: number };
 }>();
 
-// Auth Middleware
+// Auth middleware
 historyRouter.use("/*", async (c, next) => {
   const token = c.req.header("Authorization")?.split(" ")[1];
   try {
@@ -22,18 +21,16 @@ historyRouter.use("/*", async (c, next) => {
     c.set("userId", payload.id);
     await next();
   } catch (err) {
-    return c.json({ msg: "Invalid or no token" }, 401);
+    return c.json({ msg: "Invalid or missing token" }, 401);
   }
 });
 
-// ✅ POST /api/v1/history → Save Sale
+// POST: Add Sale
 historyRouter.post("/", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
   const userId = c.get("userId");
-
-  const body = await c.req.json();
 
   const schema = z.object({
     buyerNote: z.string().optional(),
@@ -48,7 +45,9 @@ historyRouter.post("/", async (c) => {
     ),
   });
 
+  const body = await c.req.json();
   const parsed = schema.safeParse(body);
+
   if (!parsed.success) {
     return c.json({ error: parsed.error }, 400);
   }
@@ -62,12 +61,7 @@ historyRouter.post("/", async (c) => {
         buyerNote,
         total,
         products: {
-          create: products.map((p) => ({
-            productId: p.productId,
-            productName: p.productName,
-            sellingPrice: p.sellingPrice,
-            profit: p.profit,
-          })),
+          create: products,
         },
       },
       include: { products: true },
@@ -79,7 +73,7 @@ historyRouter.post("/", async (c) => {
   }
 });
 
-// ✅ GET /api/v1/history → Get Sale History Grouped by Date + Monthly Revenue
+// GET: Sale History with Revenue Summary
 historyRouter.get("/", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -94,24 +88,49 @@ historyRouter.get("/", async (c) => {
     });
 
     const groupedByDate: Record<string, typeof histories> = {};
-    let monthlyRevenue = 0;
-    let monthlyProfit = 0;
+
+    let thisMonthRevenue = 0;
+    let thisMonthProfit = 0;
+    let lastMonthRevenue = 0;
+    let lastMonthProfit = 0;
+
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const lastMonth = (thisMonth - 1 + 12) % 12;
+    const thisYear = now.getFullYear();
+    const lastMonthYear = lastMonth === 11 ? thisYear - 1 : thisYear;
 
     for (const h of histories) {
-      const dateKey = h.createdAt.toISOString().split("T")[0];
-      if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
-      groupedByDate[dateKey].push(h);
-      monthlyRevenue += h.total;
-      h.products.forEach((p) => {
-        //@ts-ignore
-        monthlyProfit += p.profit;
-      });
+      const createdAt = new Date(h.createdAt);
+      const key = createdAt.toISOString().split("T")[0];
+
+      if (!groupedByDate[key]) groupedByDate[key] = [];
+      groupedByDate[key].push(h);
+
+      const month = createdAt.getMonth();
+      const year = createdAt.getFullYear();
+
+      if (month === thisMonth && year === thisYear) {
+        thisMonthRevenue += h.total;
+        // @ts-ignore
+        h.products.forEach((p) => (thisMonthProfit += p.profit));
+      } else if (month === lastMonth && year === lastMonthYear) {
+        lastMonthRevenue += h.total;
+        // @ts-ignore
+        h.products.forEach((p) => (lastMonthProfit += p.profit));
+      }
     }
 
     return c.json({
       groupedByDate,
-      monthlyRevenue,
-      monthlyProfit,
+      thisMonth: {
+        revenue: thisMonthRevenue,
+        profit: thisMonthProfit,
+      },
+      lastMonth: {
+        revenue: lastMonthRevenue,
+        profit: lastMonthProfit,
+      },
     });
   } catch (err) {
     return c.json({ error: "Failed to fetch history" }, 500);

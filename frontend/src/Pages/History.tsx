@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Header from "../components/Header"; // Assuming Header now shows profit
+import Header from "../components/Header";
 import { useNavigate } from "react-router-dom";
 
 type Product = {
@@ -8,6 +8,7 @@ type Product = {
   productId: number;
   productName: string;
   sellingPrice: number;
+  profit: number;
 };
 
 type History = {
@@ -23,36 +24,29 @@ export default function HistoryPage() {
   const [groupedHistory, setGroupedHistory] = useState<
     Record<string, History[]>
   >({});
-  const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
-  const [monthlyProfit, setMonthlyProfit] = useState<number>(0);
+  const [thisMonthRevenue, setThisMonthRevenue] = useState(0);
+  const [thisMonthProfit, setThisMonthProfit] = useState(0);
+  const [lastMonthRevenue, setLastMonthRevenue] = useState(0);
+  const [lastMonthProfit, setLastMonthProfit] = useState(0);
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         const token = localStorage.getItem("Token");
-        if (!token) {
-          navigate("/");
-        }
+        if (!token) return navigate("/");
+
         const res = await axios.get(
           "https://hono-backend.23btc116.workers.dev/api/v1/history/",
           {
-            headers: {
-              Authorization: "Bearer " + localStorage.getItem("Token"),
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
 
-        const grouped = res.data.groupedByDate;
-        const revenue = res.data.monthlyRevenue;
-        const profit = res.data.monthlyProfit || 0; // Optional
-
-        if (!grouped || typeof grouped !== "object") {
-          throw new Error("Invalid groupedByDate format");
-        }
-
-        setGroupedHistory(grouped);
-        setMonthlyRevenue(revenue);
-        setMonthlyProfit(profit);
+        setGroupedHistory(res.data.groupedByDate || {});
+        setThisMonthRevenue(res.data.thisMonth.revenue || 0);
+        setThisMonthProfit(res.data.thisMonth.profit || 0);
+        setLastMonthRevenue(res.data.lastMonth.revenue || 0);
+        setLastMonthProfit(res.data.lastMonth.profit || 0);
       } catch (err) {
         console.error("Failed to load history", err);
       }
@@ -74,11 +68,17 @@ export default function HistoryPage() {
       <main className="pt-20 px-6 max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-3">Sales History</h1>
 
-        <div className="bg-slate-900 rounded-md p-4 mb-6 border border-slate-700">
-          <p className="text-slate-300 mb-1">
-            📈 Monthly Revenue: ₹{monthlyRevenue}
-          </p>
-          <p className="text-slate-300">💰 Monthly Profit: ₹{monthlyProfit}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="bg-slate-900 rounded-md p-4 border border-slate-700">
+            <h2 className="text-xl font-semibold mb-2">📅 This Month</h2>
+            <p className="text-slate-300">📈 Revenue: ₹{thisMonthRevenue}</p>
+            <p className="text-slate-300">💰 Profit: ₹{thisMonthProfit}</p>
+          </div>
+          <div className="bg-slate-900 rounded-md p-4 border border-slate-700">
+            <h2 className="text-xl font-semibold mb-2">🗓️ Last Month</h2>
+            <p className="text-slate-300">📈 Revenue: ₹{lastMonthRevenue}</p>
+            <p className="text-slate-300">💰 Profit: ₹{lastMonthProfit}</p>
+          </div>
         </div>
 
         {sortedDates.length === 0 ? (
